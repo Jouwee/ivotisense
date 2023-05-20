@@ -1,5 +1,5 @@
-import type { Geo } from '$lib/commons/geometry';
 import type { Place } from '$lib/datalake/osm/osm.types'
+import type { MapProjection } from '../map-projection';
 import { GenericRenderer } from './generic.renderer'
 
 export class RoadBasicRenderer extends GenericRenderer<Place> {
@@ -7,15 +7,15 @@ export class RoadBasicRenderer extends GenericRenderer<Place> {
     render(
         road: Place,
         ctx: CanvasRenderingContext2D,
-        mapContext: { offset: Geo, zoom: number }
+        projection: MapProjection
     ) {
-        ctx.lineWidth = 5;
+        ctx.lineWidth = 1 * projection.zoom;
         ctx.strokeStyle = '#eeeeee'
         if (road.polygon) {
             ctx.beginPath();
-            ctx.moveTo(...this.project(road.polygon[0], mapContext))
+            ctx.moveTo(...projection.project(road.polygon[0]))
             for (let i = 1; i < road.polygon.length; i++) {
-                ctx.lineTo(...this.project(road.polygon[i], mapContext));
+                ctx.lineTo(...projection.project(road.polygon[i]));
             }
             ctx.stroke()
         }

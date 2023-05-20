@@ -28,6 +28,8 @@
         background: var(--surface-1);
         gap: 1rem;
         padding: 0.5rem;
+        box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.3);
+        z-index: 2;
     }
 
     nav a {

@@ -1,7 +1,6 @@
 import { Geometry } from '$lib/commons/geometry'
 import { Log } from '../../commons/log'
 import type { OsmDao } from './osm.dao'
-import { OsmLandValue } from './osm.landvalue'
 import type { Class, NativeOsmElement, NativeOsmExtract, NaturalFeature, Place } from './osm.types'
 
 export class OsmUpdater {
@@ -20,8 +19,6 @@ export class OsmUpdater {
         this.computeGeometry(places)
         Log.info('Creating missing intermediaries')
         this.createMissingIntermediaries(places)
-        Log.info('Computing landvalue')
-        this.estimateLandValue(places)
         Log.info('Inserting data')
         this.osm.insertMany(places)
         Log.info('Done')
@@ -178,13 +175,5 @@ export class OsmUpdater {
             places.push(newParcel)
         })   
     }
-
-    estimateLandValue(places: Place[]): void {
-        const onlyParcels = places.filter(place => place.class === 'parcel')
-        const estimator = new OsmLandValue(onlyParcels)
-        onlyParcels.forEach(parcel => estimator.estimate(parcel))
-        
-    }
-
 
 }

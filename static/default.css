@@ -1,6 +1,7 @@
 body {
-    --primary: #ff6088;
+    --primary: #ff0080;
     --surface-1: white;
+    --surface-2: #f9f9f9;
     --base: #f9f9f9;
 
     background-color: var(--base);

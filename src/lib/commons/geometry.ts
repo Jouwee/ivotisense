@@ -1,3 +1,4 @@
+/** lon, lat */
 export type Geo = [number, number]
 
 export type GeoPolygon = Geo[]

@@ -14,7 +14,6 @@ export interface Place {
     originalOsmelement?: NativeOsmElement,
     levels?: number,
     households?: number,
-    totalLandValue?: number
 }
 
 export interface NaturalFeature extends Place {

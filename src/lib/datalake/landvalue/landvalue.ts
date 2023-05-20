@@ -1,7 +1,6 @@
-import { Geometry, type Geo } from '$lib/commons/geometry'
-import { Log } from '../../commons/log'
-import type { OsmDao } from './osm.dao'
-import type { Class, NativeOsmElement, NativeOsmExtract, NaturalFeature, Place } from './osm.types'
+import { AbstractDao } from '../abstract.dao'
+import type { Geo } from '$lib/commons/geometry'
+
 
 /*
 Plátano
@@ -190,71 +189,22 @@ const knownValues = [
     {"area":842.8,"value":320000,"type":"terrain","geo":{"lat":-29.617821,"lon":-51.17729480000003},"url":"https://www.platanoimoveis.com.br/Imovel/Venda/Terreno/Jardim-Panoramico/Ivoti/RS/1186","valuePerSqm":379.68675842429997}
 ]
 
-const influenceRadius = 200
+export class LandValueDao extends AbstractDao<LandValue> {
 
-// TODO: Pensar numa estrutura melhor
-export class OsmLandValue {
-
-    private cityAverage: number
-    private knownValues: any[]
-
-    constructor(allBuildings: Place[]) {
-        this.knownValues = knownValues.filter(v => v.valuePerSqm).sort((a, b) => (a.valuePerSqm||0) - (b.valuePerSqm||0))
-        const cutoff = this.knownValues.length * 0.05
-        this.knownValues = this.knownValues.slice(cutoff, this.knownValues.length - cutoff)
-        this.cityAverage = this.knownValues.reduce((acc, r) => acc + r.valuePerSqm, 0) / knownValues.length
-        this.knownValues.forEach(v => {
-            const building = allBuildings.find(building => v.osm_id === building.id)
-            if (building) {
-                v.geo = (building.polygon||[])[0]
-            }
-            
-        })
+    constructor() {
+        super('questionario')
     }
 
-    estimate(building: Place) {
-        // const exactMatch = this.knownValues.find(v => v.osm_id === building.id)
-        // if (exactMatch) {
-        //     building.landValue = exactMatch.valuePerSqm
-        //     building.estimatedLandValue = exactMatch.valuePerSqm
-        //     return building
-        // }
-        building.totalLandValue = this.cityAverage
-        let sum = 0
-        let weightSum = 0
-        for (const value of this.knownValues) {
-            const distance = this.distance((building.polygon||[])[0], [value.geo.lon, value.geo.lat])
-            //console.log((building.polygon||[])[0], value.geo, distance)
-            if (distance < influenceRadius) {
-                const weight = 1-(distance/influenceRadius)
-                weightSum += weight
-                sum += (value.valuePerSqm * weight)
-            }
-        }
-        if (weightSum > 0) {
-            if (weightSum < 1) {
-                const avgWeight = 1 - weightSum
-                weightSum += avgWeight
-                sum += this.cityAverage * avgWeight
-            }
-            building.totalLandValue = sum / weightSum
-        }
-        return building
+    public async list(): Promise<LandValue[]> {
+        return knownValues.filter(v => v.geo && v.valuePerSqm).map(v => ({
+            geo: [v.geo.lon, v.geo.lat] as Geo,
+            valuePerSqm: v.valuePerSqm as number
+        }))
     }
 
-    distance(g1: Geo, g2: Geo) {
-        const R = 6371e3; // metres
-        const φ1 = g1[1] * Math.PI/180; // φ, λ in radians
-        const φ2 = g2[1] * Math.PI/180;
-        const Δφ = (g2[1]-g1[1]) * Math.PI/180;
-        const Δλ = (g2[0]-g1[0]) * Math.PI/180;
+}
 
-        const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
-                Math.cos(φ1) * Math.cos(φ2) *
-                Math.sin(Δλ/2) * Math.sin(Δλ/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-
-        return R * c; // in metres
-    }
-
+export interface LandValue {
+    geo: Geo,
+    valuePerSqm: number
 }

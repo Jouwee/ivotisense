@@ -19,11 +19,14 @@
 
 <style>
   nav {
+      position: relative;
       display: flex;
       flex-direction: row;
       align-items: center;
       height: 3rem;
       background: var(--surface-1);
+      box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.3);
+      z-index: 1;
   }
 
   nav a {

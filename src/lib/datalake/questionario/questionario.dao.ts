@@ -30,7 +30,7 @@ export class QuestionarioDao extends AbstractDao<QuestionarioResponse> {
                     spreadsheetId: '15Ql8TpyCDfSejToiH89yjrJ9QWljWW7IuVNRatOFkkA',
                     range: 'Scores!A:N',
                 },
-                (err: unknown, res: unknown) => {
+                (err, res) => {
                     if (err || !res) return console.log('The API returned an error: ', err);
                     const rows = res.data.values;
                     if (rows && rows.length) {

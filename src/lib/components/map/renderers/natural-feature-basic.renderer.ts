@@ -1,5 +1,5 @@
-import type { Geo } from '$lib/commons/geometry';
 import type { Place } from '$lib/datalake/osm/osm.types'
+import type { MapProjection } from '../map-projection';
 import { GenericRenderer } from './generic.renderer'
 
 export class NaturalFeatureBasicRenderer extends GenericRenderer<Place> {
@@ -7,7 +7,7 @@ export class NaturalFeatureBasicRenderer extends GenericRenderer<Place> {
     render(
         naturalFeature: Place,
         ctx: CanvasRenderingContext2D,
-        mapContext: { offset: Geo, zoom: number }
+        projection: MapProjection
     ) {
         if (!naturalFeature.polygon) {
             return
@@ -22,9 +22,9 @@ export class NaturalFeatureBasicRenderer extends GenericRenderer<Place> {
         }
         ctx.beginPath();
         const start = naturalFeature.polygon[0]
-        ctx.moveTo(...this.project(start, mapContext))
+        ctx.moveTo(...projection.project(start))
         for (let i = 1; i < naturalFeature.polygon.length; i++) {
-            ctx.lineTo(...this.project(naturalFeature.polygon[i], mapContext))
+            ctx.lineTo(...projection.project(naturalFeature.polygon[i]))
         }
         ctx.closePath()
         ctx.fill()

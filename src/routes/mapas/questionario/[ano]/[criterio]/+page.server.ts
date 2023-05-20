@@ -19,7 +19,7 @@ export const load = (async ({ params }) => {
     }
     const allScores = await new QuestionarioDao().list()
     console.log(allScores)
-    const scores = allScores.map(s => ({ geo: s.geo, value: s[field] })).filter(s => s)
+    const scores = allScores.map(s => ({ geo: s.geo, value: s[field] as number })).filter(s => s)
     return {
         places: await new OsmDao().list(),
         georeferencedScores: scores.filter(s => s.geo)

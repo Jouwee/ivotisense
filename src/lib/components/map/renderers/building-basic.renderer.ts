@@ -1,5 +1,5 @@
-import type { Geo } from '$lib/commons/geometry';
 import type { Place } from '$lib/datalake/osm/osm.types'
+import type { MapProjection } from '../map-projection';
 import { GenericRenderer } from './generic.renderer'
 
 export class BuildingBasicRenderer extends GenericRenderer<Place> {
@@ -8,23 +8,24 @@ export class BuildingBasicRenderer extends GenericRenderer<Place> {
     render(
         building: Place,
         ctx: CanvasRenderingContext2D,
-        mapContext: { offset: Geo, zoom: number }
+        projection: MapProjection
     ) {
         ctx.lineWidth = 1;
         ctx.strokeStyle = '#cccccc'
         ctx.fillStyle = '#eeeeee'
         if (building.polygon) {
             ctx.beginPath();
-            ctx.moveTo(...this.project(building.polygon[0], mapContext))
+            ctx.moveTo(...projection.project(building.polygon[0]))
             for (let i = 1; i < building.polygon.length; i++) {
-                ctx.lineTo(...this.project(building.polygon[i], mapContext));
+                ctx.lineTo(...projection.project(building.polygon[i]));
             }
             ctx.stroke()
             ctx.fill()
         }
-
-        const c = this.project(building.centroid, mapContext)
-        ctx.fillRect(c[0], c[1], 1, 1)
+        if (building.centroid) {
+            const c = projection.project(building.centroid)
+            ctx.fillRect(c[0], c[1], 1, 1)
+        }
 
     }
 

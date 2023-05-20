@@ -7,15 +7,14 @@
 	import { NaturalFeatureBasicRenderer } from './renderers/natural-feature-basic.renderer'
 	import { ParcelBasicRenderer } from './renderers/parcel-basic.renderer'
 	import { RoadBasicRenderer } from './renderers/road-basic.renderer'
+	import { MapProjection } from './map-projection';
+	import { HeatmapRenderer } from './renderers/heatmap.renderer';
+	import HeatmapLegend from './heatmap-legend.svelte';
 
 
     export let places: Place[]
 
-    let zoom = 80000
-    const viewbox = {
-        start: { lat: -29.625, lon: -51.1856 },
-        end: { lat: -29.5676, lon: -51.1064 }
-    }
+    const projection = new MapProjection()
 
     type Coordinate = {x: number, y: number}
 
@@ -27,11 +26,15 @@
         'parcel': new ParcelBasicRenderer(),
         'building': new BuildingBasicRenderer()
     }
+    let mergedRenderers: { [k: string]: GenericRenderer<Place> | undefined } = {}
+    let heatmapRenderers: Array<HeatmapRenderer> = []
 
     onMount(() => {
         var canvas: HTMLCanvasElement = document.getElementById("myCanvas") as HTMLCanvasElement
         render(canvas)
         $: {
+            mergedRenderers = Object.assign({}, defaultRenderers, renderers)
+            heatmapRenderers = Object.values(mergedRenderers).filter(r => r && r instanceof HeatmapRenderer).map(r => r as HeatmapRenderer)
             render(canvas)
         }
 
@@ -58,14 +61,24 @@
         canvas.addEventListener('mousemove', (event) => {
             if (lastPress !== undefined) {
                 const currentPos = getCanvasCoordinates(event)
-                viewbox.start.lon = viewbox.start.lon - ((currentPos.x - lastPress.x) / zoom)
-                viewbox.start.lat = viewbox.start.lat + ((currentPos.y - lastPress.y) / zoom)
+                projection.translatePixels(currentPos.x - lastPress.x, currentPos.y - lastPress.y)
                 render(canvas)
                 lastPress = currentPos
             }
         }, false)
-        canvas.addEventListener('scroll', (event) => {
-            console.log('scroll', event)
+        canvas.addEventListener('wheel', (event) => {
+            if (event.deltaY < 0) {
+                projection.increaseZoom()
+            } else {
+                projection.decreaseZoom()
+            }
+            render(canvas)
+        }, false)
+        canvas.addEventListener('resize', (event) => {
+            projection.canvasCenter = [
+                canvas.clientWidth / 2,
+                canvas.clientHeight / 2
+            ]
             render(canvas)
         }, false)
     })
@@ -75,20 +88,13 @@
     }
 
     function getElementAt(point: Coordinate): Place | undefined {
-        const geo = toGeo(point, { offset: [viewbox.start.lon, viewbox.start.lat], zoom })
+        const geo = projection.unproject([point.x, point.y])
         for (let place of places) {
             if (place.polygon && Geometry.polyContainsPoint(place.polygon, geo)) {
                 return place
             }
         }
         return undefined
-    }
-
-    function toGeo(coord: Coordinate, mapContext: { offset: Geo, zoom: number }): [number, number] {
-        return [
-            (coord.x / mapContext.zoom) + mapContext.offset[0],
-            ((1000 - coord.y) / mapContext.zoom) + mapContext.offset[1],
-        ]
     }
 
     function render(canvas: HTMLCanvasElement) {
@@ -102,16 +108,13 @@
 
         let sortingOrder: Class[] = ['natural-feature', 'road', 'parcel', 'building', 'unknown']
         places = places.sort((a, b) => sortingOrder.indexOf(a.class) - sortingOrder.indexOf(b.class))
-
-
-        let mergedRenderers = Object.assign({}, defaultRenderers, renderers)
         Object.entries(mergedRenderers).forEach(([k, renderer]) => {
-            renderer?.init(ctx, { offset: [viewbox.start.lon, viewbox.start.lat], zoom }, places.filter(p => p.class === k))
+            renderer?.init(ctx, places.filter(p => p.class === k))
         })
         for (let i = 0; i < places.length; i++) {
             let renderer = mergedRenderers[places[i].class]
             if (renderer) {
-                renderer.render(places[i], ctx, { offset: [viewbox.start.lon, viewbox.start.lat], zoom })
+                renderer.render(places[i], ctx, projection)
             }
         }
     }
@@ -119,3 +122,36 @@
 </script>
 
 <canvas id="myCanvas" width="1850" height="830"></canvas>
+
+<div class="legend">
+    <div class="legend-card">
+        {#each heatmapRenderers as renderer}
+            <HeatmapLegend model={renderer.heatmapModel}></HeatmapLegend>
+        {/each}
+    </div>
+</div>
+    
+
+<style>
+    .legend {
+        position: fixed;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        width: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: end;
+        align-items: stretch;
+        pointer-events: none;
+        padding: 1rem;
+    }
+
+    .legend-card {
+        background: var(--surface-2);
+        border-radius: 1rem;
+        padding: 1rem;
+        box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.3);
+    }
+
+</style>

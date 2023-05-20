@@ -1,27 +1,20 @@
 import type { Geo } from '$lib/commons/geometry'
 import type { Place } from '$lib/datalake/osm/osm.types'
+import type { MapProjection } from '../map-projection';
 
 export abstract class GenericRenderer<T extends Place> {
 
     abstract render(
         place: T,
         ctx: CanvasRenderingContext2D,
-        mapContext: { offset: Geo, zoom: number }
+        projection: MapProjection
     ): void
 
     public init(
         _ctx: CanvasRenderingContext2D,
-        _mapContext: { offset: Geo, zoom: number },
         _places: Place[]
     // eslint-disable-next-line @typescript-eslint/no-empty-function
     ): void {}
-
-    public project(geo: Geo, mapContext: { offset: Geo, zoom: number }): [number, number] {
-        return [
-            ((geo[0] - mapContext.offset[0])) * mapContext.zoom,
-            1000 - (((geo[1] - mapContext.offset[1]))  * mapContext.zoom),
-        ]
-    }
 
     /**
      * A linear interpolator for hexadecimal colors
