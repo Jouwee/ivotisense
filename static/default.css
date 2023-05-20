@@ -1,0 +1,16 @@
+body {
+    --primary: #ff6088;
+    --surface-1: white;
+    --base: #f9f9f9;
+
+    background-color: var(--base);
+    margin: 0;
+}
+
+* {
+    font-family: 'Poppins', sans-serif; 
+}
+
+section {
+    padding: 2rem;
+}
